@@ -7,140 +7,12 @@ This is a temporary script file.
 """
 
 import csv
+import numpy
+from desc import Desc
+from cause import Cause
+from country import Country
+from dataset import DataSet            
 
-class Desc:
-    
-    code = 0
-    name = ""    
-    
-    def __init__(self):
-        self.code = 0
-        self.name = ""
-        
-    def parse(self, row):
-        i = 0
-        while(i < len(row)):
-            if i == 0:
-                self.code = row[i]
-            if i == 1:
-                self.name = row[i]
-            i += 1
-
-class Cause:
-    
-    id = 0
-    cases = 0
-    
-    def __init__(self, id, cases):
-        self.id = id
-        self.cases = cases
-    
-    def set_id(self, id):
-        self.id = id
-        
-    def set_cases(self, cases):
-        self.cases = cases
-        
-    def get_id(self):
-        return self.id
-    
-    def get_cases(self):
-        return self.cases
-
-class Country:
-
-    code = 0
-    name = ""    
-    
-    def __init__(self):
-        self.code = 0
-        self.name = ""
-        
-    def parse(self, row):
-        i = 0
-        while(i < len(row)):
-            if i == 0:
-                self.code = row[i]
-            if i == 1:
-                self.name = row[i]
-            i += 1
-            
-
-class DataSet:
-    
-    country = 0
-    admin1 = None
-    SubDiv = None
-    Year = 0
-    List = None
-    Cause = None
-    Sex = 0
-    Frmat = 0
-    IM_Frmat = 0  
-    Deaths = []
-    
-    def __init__(self):
-        self.country = 0
-        self.admin1 = None
-        self.SubDiv = None
-        self.Year = 0
-        self.List = None
-        self.Cause = None
-        self.Sex = 0
-        self.Frmat = 0
-        self.IM_Frmat = 0  
-        self.Deaths = []      
-    
-    def parse(self, row):
-        i = 0
-        while(i < len(row)):
-            if i == 0:
-                self.country = row[i]
-            if i == 1:
-                self.admin1 = row[i]
-            if i == 2:
-                self.SubDiv = row[i]
-            if i == 3:
-                self.Year = row[i]
-            if i == 4:
-                self.List = row[i]
-            if i == 5:
-                self.Cause = row[i]
-            if i == 6:
-                self.Sex = int(row[i])
-            if i == 7:
-                self.Frmat = row[i]
-            if i == 8:
-                self.IM_Frmat = row[i]
-            
-            if i > 8:
-                self.Deaths.append(row[i])
-            i += 1
-            
-    def get_total_deaths(self):
-        total = 0
-        for val in self.Deaths:
-            if val == '':
-                continue
-            total += int(val)
-        return total
-        
-    def get_country(self):
-        return self.country
-        
-    def get_cause(self):
-        return self.Cause
-        
-    def get_year(self):
-        return self.Year
-    
-    def get_gender(self):
-        if self.Sex == 1:
-            return "male"
-        return "female"
-    
-    def __str__(self):
-        return "String representation of krams"
 
 class Parser:
     
@@ -151,6 +23,8 @@ class Parser:
     last_country = ""
     top_causes = []
     last_year = 0
+    ignore_causes = ["B000", "A000", "B00", "C001"]
+    datasets = [] # country, year, causes
             
     def get_country(self, code):
         for c in self.countries:
@@ -183,6 +57,7 @@ class Parser:
                     continue
                 country = Country()
                 country.parse(row)
+                self.datasets.append([])
                 self.countries.append(country)
                 
     def parse_desc(self, filename = None):
@@ -239,10 +114,10 @@ class Parser:
                 or (dataset.get_year()    != self.last_year):
 
                     for c in self.top_causes:
-                        print("%s: %s (%s cases)"
+                        print("%s: %s (%s cases) -> %s"
                             % (self.last_year,
                                self.get_icd7(c.get_id()),
-                               c.get_cases()))
+                               c.get_cases(), c.get_id()))
                     if dataset.get_country() != self.last_country \
                        or self.last_country == "":
 
@@ -256,7 +131,9 @@ class Parser:
                 
                 if dataset.get_total_deaths() > self.last_num:
                     cause = dataset.get_cause()
-                    if cause != "B000" and cause != "A000":
+                    if not cause in self.ignore_causes:
+                        #self.datasets[dataset.get_country()][dataset.get_year()]\
+                        #    .append(Cause(cause, self.last_num))
                         self.last_num = dataset.get_total_deaths()
                         self.top_causes.append(Cause(cause, self.last_num))
                         
@@ -265,11 +142,6 @@ class Parser:
                     % (self.last_year,
                        self.get_icd7(c.get_id()),
                        c.get_cases()))
-                # Country,Admin1,SubDiv,Year,List,Cause,Sex,Frmat,IM_Frmat,Deaths1,Deaths2,Deaths3,Deaths4,Deaths5,Deaths6,Deaths7,Deaths8,Deaths9,Deaths10,Deaths11,Deaths12,Deaths13,Deaths14,Deaths15,Deaths16,Deaths17,Deaths18,Deaths19,Deaths20,Deaths21,Deaths22,Deaths23,Deaths24,Deaths25,Deaths26,IM_Deaths1,IM_Deaths2,IM_Deaths3,IM_Deaths4
     
 
 
-p = Parser();
-p.parse_countries("country_codes")
-p.parse_desc("icd7_desc")
-p.parse("MortIcd7");
